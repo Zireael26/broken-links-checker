@@ -1,0 +1,32 @@
+# Go-specific exclusions
+*.exe           # Compiled binaries (e.g., from go build on Windows, though less common on macOS)
+*.exe~          # Backup files for binaries
+*.dll           # Dynamic link libraries (Windows-specific, precautionary)
+*.so            # Shared object files
+*.dylib         # macOS dynamic libraries
+*.test          # Go test binaries
+*.prof          # Profiling output from pprof
+testdata/       # Test data directories 
+vendor/         # Vendored dependencies
+
+# Build and runtime artifacts
+bin/            # Common directory for compiled binaries
+dist/           # Distribution/output directory
+*.out           # Output files from go run or build
+
+# macOS-specific exclusions
+.DS_Store       # macOS Finder metadata files
+._.DS_Store     # Hidden DS_Store variants
+*.swp           # Swap files from editors (e.g., Vim, though less relevant for VS Code)
+
+# VS Code-specific exclusions
+*.code-workspace # VS Code workspace files
+
+# Project-specific exclusions
+reports/        # Directory for JSON scan reports (runtime-generated)
+logs/           # Log files (if you add logging to a file)
+*.log           # Generic log files
+
+# Miscellaneous
+*.env           # Environment variable files
+*.pem           # Certificate files
