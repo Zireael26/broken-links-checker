@@ -44,6 +44,6 @@ func (s *Scanner) worker(tasks <-chan CrawlTask, results chan<- LinkResult, wg *
 
 		// Stub: Add the multi-tier logic here
 		// Stub: Add leaf node checking logic here
-        results <- LinkResult{URL: task.URL, Status: "OK", Code: 200, Depth: task.Depth, Tier: "stub"}
+        results <- LinkResult{URL: task.URL, Status: "OK", Code: 200, Depth: task.Depth}
     }
 }

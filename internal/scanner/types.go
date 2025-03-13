@@ -6,7 +6,6 @@ type LinkResult struct {
     Status string `json:"status"`
     Code   int    `json:"code"`
     Depth  int    `json:"depth,omitempty"`
-    Tier   string `json:"tier"`
 }
 
 type CrawlTask struct {
