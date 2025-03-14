@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Zireael26/broken-links-checker/internal/report"
@@ -43,9 +45,15 @@ func (h *Handler) Scan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL is required", http.StatusBadRequest)
 		return
 	}
-	if req.Depth <= 0 {
-		req.Depth = 1 // Default depth
+
+	if req.Depth < 0 {
+		req.Depth = 0 // Default depth
 	}
+
+	if req.Depth > 2 {
+		req.Depth = 2 // Limit depth to 2
+	}
+
 	if req.Workers <= 0 {
 		req.Workers = 50 // Default workers
 	}
@@ -54,10 +62,17 @@ func (h *Handler) Scan(w http.ResponseWriter, r *http.Request) {
 	results := make(chan scanner.LinkResult, 100)
 	h.scans[scanID] = results
 
+	var swg sync.WaitGroup
+	swg.Add(1)
 	go func() {
+		defer close(results)
 		defer delete(h.scans, scanID)
-		h.scanner.Scan(req.URL, req.Depth, req.Workers, results)
+		log.Printf("Starting scan %s for %s with depth %d", scanID, req.URL, req.Depth)
+		h.scanner.Scan(req.URL, req.Depth, results, &swg)
 		reportPath := filepath.Join("reports", scanID+".json")
+
+		swg.Wait()
+		log.Printf("Saving report to %s", reportPath)
 		if err := report.SaveReport(scanID, req.URL, req.Depth, results, reportPath); err != nil {
 			// Log error (add logger later)
 		}
