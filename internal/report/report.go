@@ -22,7 +22,7 @@ func SaveReport(scanID, startURL string, depth int, results <-chan scanner.LinkR
     var working, broken []scanner.LinkResult
     for result := range results {
 		// Accept all 2xx codes as working
-        if result.Code < 299 {
+        if result.Code < 299 && result.Code >= 200 {
             working = append(working, result)
         } else {
             broken = append(broken, result)
