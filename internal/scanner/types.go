@@ -9,8 +9,9 @@ type LinkResult struct {
 }
 
 type CrawlTask struct {
-    URL   string
-    Depth int
+	BaseURL string
+    URL     string
+    Depth   int
 }
 
 var LinkTypes = map[string]string{

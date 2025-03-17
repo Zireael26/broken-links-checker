@@ -51,9 +51,10 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
         }(query, attr)
     }
     extractWg.Wait()
+	preppedLinks := prepareLinks(task, links, visited)
 
 	if (task.Depth == maxDepth) {
-		wg.Add(len(links))
+		wg.Add(len(preppedLinks))
 	}
 	// Process the links in the following way. 
 	// If the current depth is less than max depth, create a new task for each link and send it to the tasks channel.
@@ -61,8 +62,8 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
 	for link, text := range links {
 		if task.Depth < maxDepth {
 			// TODO: Improve the check for links starting with the base URL
-			if (strings.HasPrefix(link, task.URL)) {
-				tasks <- CrawlTask{URL: link, Depth: task.Depth + 1}
+			if (isInternalURL(task.BaseURL, link)) {
+				tasks <- CrawlTask{BaseURL: task.BaseURL, URL: link, Depth: task.Depth + 1}
 			}
 		} else if task.Depth == maxDepth {
 			s.checkLeafNode(link, text, task.Depth, results, visited)

@@ -21,7 +21,7 @@ func (s *Scanner) Scan(url string, maxDepth int, results chan<- LinkResult, swg 
     tasks := make(chan CrawlTask, 100)
     // var wg sync.WaitGroup
     visited := &sync.Map{}
-    tasks <- CrawlTask{URL: url, Depth: 0}
+    tasks <- CrawlTask{BaseURL:url, URL: url, Depth: 0}
 
 	log.Printf("Added initial task for %s", url)
 	go s.worker(tasks, results, swg, visited, maxDepth)
@@ -42,25 +42,4 @@ func (s *Scanner) worker(tasks chan CrawlTask, results chan<- LinkResult, wg *sy
 		log.Printf("Processing task for %s", task.URL)
 		s.ProcessStaticWebpage(task, tasks, results, wg, visited, maxDepth)
     }
-}
-
-func (s *Scanner) checkLeafNode(url, ref string, depth int, results chan<- LinkResult, visited *sync.Map) {
-	log.Printf("Checking leaf node: %s", url)
-	resp, err := s.client.Head(url)
-	_, loaded := visited.LoadOrStore(url, true)
-	if loaded{
-		return
-	}
-
-	if err != nil {
-		results <- LinkResult{URL: url, Ref: ref, Status: "Failed to fetch", Code: 0, Depth: depth}
-		return
-	}
-
-	if resp.StatusCode > 299 {
-		results <- LinkResult{URL: url, Ref: ref, Status: resp.Status, Code: resp.StatusCode, Depth: depth}
-		return
-	}
-
-	results <- LinkResult{URL: url, Ref: ref, Status: resp.Status, Code: resp.StatusCode, Depth: depth}
 }
