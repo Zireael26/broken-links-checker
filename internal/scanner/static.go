@@ -59,7 +59,7 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
 	// Process the links in the following way. 
 	// If the current depth is less than max depth, create a new task for each link and send it to the tasks channel.
 	// If the current depth is equal to max depth (leaf node, check the status of each link and send it to the results channel.
-	for link, text := range links {
+	for link, text := range preppedLinks {
 		if task.Depth < maxDepth {
 			// TODO: Improve the check for links starting with the base URL
 			if (isInternalURL(task.BaseURL, link)) {
