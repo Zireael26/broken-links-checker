@@ -10,19 +10,15 @@ import (
 
 func (s *Scanner) checkLeafNode(url, ref string, depth int, results chan<- LinkResult, visited *sync.Map) {
 	log.Printf("Checking leaf node: %s", url)
-	resp, err := s.client.Head(url)
 	_, loaded := visited.LoadOrStore(url, true)
 	if loaded{
 		return
 	}
 
+	resp, err := s.client.Head(url)
+
 	if err != nil {
 		results <- LinkResult{URL: url, Ref: ref, Status: "Failed to fetch", Code: 0, Depth: depth}
-		return
-	}
-
-	if resp.StatusCode > 299 {
-		results <- LinkResult{URL: url, Ref: ref, Status: resp.Status, Code: resp.StatusCode, Depth: depth}
 		return
 	}
 
