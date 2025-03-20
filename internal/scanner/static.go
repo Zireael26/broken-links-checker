@@ -63,6 +63,7 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
 		if task.Depth < maxDepth {
 			// TODO: Improve the check for links starting with the base URL
 			if (isInternalURL(task.BaseURL, link)) {
+				wg.Add(1)
 				tasks <- CrawlTask{BaseURL: task.BaseURL, URL: link, Depth: task.Depth + 1}
 			}
 		} else if task.Depth == maxDepth {

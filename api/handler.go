@@ -109,7 +109,8 @@ func (h *Handler) GetScanStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reportPath := filepath.Join("reports", scanID+".json")
-	if _, err := http.Dir("reports").Open(reportPath); err == nil {
+	log.Printf("Checking for report at %s", reportPath)
+	if _, err := http.Dir("").Open(reportPath); err == nil {
 		json.NewEncoder(w).Encode(map[string]string{
 			"scan_id":     scanID,
 			"status":      "completed",
