@@ -59,6 +59,7 @@ func (h *Handler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scanID := generateScanID()
+	tasks := make(chan scanner.CrawlTask, 100)
 	results := make(chan scanner.LinkResult, 100)
 	h.scans[scanID] = results
 
@@ -66,13 +67,13 @@ func (h *Handler) Scan(w http.ResponseWriter, r *http.Request) {
 	swg.Add(1)
 	go func() {
 		log.Printf("Starting scan %s for %s with depth %d", scanID, req.URL, req.Depth)
-		h.scanner.Scan(req.URL, req.Depth, results, &swg)
+		h.scanner.Scan(req.URL, req.Depth, tasks, results, &swg)
 		reportPath := filepath.Join("reports", scanID+".json")
 		
 		swg.Wait()
+		close(tasks)
 		close(results)
 		log.Printf("Scan %s completed, len(results): %d", scanID, len(results))
-		log.Printf("Saving report to %s", reportPath)
 		if err := report.SaveReport(scanID, req.URL, req.Depth, results, reportPath); err != nil {
 			log.Printf("Failed to save report for %s: %v", scanID, err)
 		}

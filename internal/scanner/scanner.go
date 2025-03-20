@@ -17,16 +17,13 @@ func New(client *http.Client, browser *rod.Browser) *Scanner {
     return &Scanner{client: client, browser: browser}
 }
 
-func (s *Scanner) Scan(url string, maxDepth int, results chan<- LinkResult, swg *sync.WaitGroup) {
-    tasks := make(chan CrawlTask, 100)
+func (s *Scanner) Scan(url string, maxDepth int, tasks chan CrawlTask, results chan<- LinkResult, swg *sync.WaitGroup) {
     // var wg sync.WaitGroup
     visited := &sync.Map{}
     tasks <- CrawlTask{BaseURL:url, URL: url, Depth: 0}
 
 	log.Printf("Added initial task for %s", url)
 	go s.worker(tasks, results, swg, visited, maxDepth)
-
-    // defer close(tasks)
 }
 
 func (s *Scanner) worker(tasks chan CrawlTask, results chan<- LinkResult, wg *sync.WaitGroup, visited *sync.Map, maxDepth int) {
@@ -35,6 +32,7 @@ func (s *Scanner) worker(tasks chan CrawlTask, results chan<- LinkResult, wg *sy
     for task := range tasks {
 		if _, loaded := visited.LoadOrStore(task.URL, true); loaded || task.Depth > maxDepth {
 			log.Printf("Skipping task for %s", task.URL)
+			wg.Done()
             continue
         }
 		
