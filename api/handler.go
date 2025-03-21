@@ -2,9 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Zireael26/broken-links-checker/internal/report"
@@ -43,24 +45,40 @@ func (h *Handler) Scan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL is required", http.StatusBadRequest)
 		return
 	}
-	if req.Depth <= 0 {
-		req.Depth = 1 // Default depth
+
+	if req.Depth < 0 {
+		req.Depth = 0 // Default depth
 	}
+
+	if req.Depth > 2 {
+		req.Depth = 2 // Limit depth to 2
+	}
+
 	if req.Workers <= 0 {
 		req.Workers = 50 // Default workers
 	}
 
 	scanID := generateScanID()
+	tasks := make(chan scanner.CrawlTask, 100)
 	results := make(chan scanner.LinkResult, 100)
 	h.scans[scanID] = results
 
+	var swg sync.WaitGroup
+	swg.Add(1)
 	go func() {
-		defer delete(h.scans, scanID)
-		h.scanner.Scan(req.URL, req.Depth, req.Workers, results)
+		log.Printf("Starting scan %s for %s with depth %d", scanID, req.URL, req.Depth)
+		h.scanner.Scan(req.URL, req.Depth, tasks, results, &swg)
 		reportPath := filepath.Join("reports", scanID+".json")
+		
+		swg.Wait()
+		close(tasks)
+		close(results)
+		log.Printf("Scan %s completed, len(results): %d", scanID, len(results))
 		if err := report.SaveReport(scanID, req.URL, req.Depth, results, reportPath); err != nil {
-			// Log error (add logger later)
+			log.Printf("Failed to save report for %s: %v", scanID, err)
 		}
+		log.Printf("Report saved to %s", reportPath)
+		defer delete(h.scans, scanID)
 	}()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -92,7 +110,8 @@ func (h *Handler) GetScanStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reportPath := filepath.Join("reports", scanID+".json")
-	if _, err := http.Dir("reports").Open(reportPath); err == nil {
+	log.Printf("Checking for report at %s", reportPath)
+	if _, err := http.Dir("").Open(reportPath); err == nil {
 		json.NewEncoder(w).Encode(map[string]string{
 			"scan_id":     scanID,
 			"status":      "completed",

@@ -26,6 +26,7 @@ dist/           # Distribution/output directory
 reports/        # Directory for JSON scan reports (runtime-generated)
 logs/           # Log files (if you add logging to a file)
 *.log           # Generic log files
+reports/*.json
 
 # Miscellaneous
 *.env           # Environment variable files
