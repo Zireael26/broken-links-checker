@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -15,7 +16,9 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
 	}()
     // Fetch the page
 	log.Printf("Fetching %s", task.URL)
-    resp, err := s.client.Get(task.URL)
+	req, _ := http.NewRequest(http.MethodGet, task.URL, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+    resp, err := s.client.Do(req)
     if err != nil {
         log.Printf("Failed to fetch %s: %v", task.URL, err)
         results <- LinkResult{URL: task.URL, Status: "Failed to fetch", Code: 0, Depth: task.Depth}
