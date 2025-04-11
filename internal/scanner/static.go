@@ -21,19 +21,19 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
     resp, err := s.client.Do(req)
     if err != nil {
         log.Printf("Failed to fetch %s: %v", task.URL, err)
-        results <- LinkResult{URL: task.URL, Status: "Failed to fetch", Code: 0, Depth: task.Depth}
+        results <- LinkResult{URL: task.URL, Status: "Failed to fetch", Code: 0, Depth: task.Depth, Tier: "static"}
         return
     }
     defer resp.Body.Close()
 
     if resp.StatusCode > 299 {
         log.Printf("Failed to fetch %s: %s", task.URL, resp.Status)
-        results <- LinkResult{URL: task.URL, Status: resp.Status, Code: resp.StatusCode, Depth: task.Depth}
+        results <- LinkResult{URL: task.URL, Status: resp.Status, Code: resp.StatusCode, Depth: task.Depth, Tier: "static"}
         return
     }
 
 	// First add the current page to the results
-	results <- LinkResult{URL: task.URL, Status: resp.Status, Code: resp.StatusCode, Depth: task.Depth}
+	results <- LinkResult{URL: task.URL, Status: resp.Status, Code: resp.StatusCode, Depth: task.Depth, Tier: "static"}
 
     // Parse the page
     doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -54,17 +54,20 @@ func (s *Scanner) ProcessStaticWebpage(task CrawlTask, tasks chan CrawlTask, res
         }(query, attr)
     }
     extractWg.Wait()
+	
+	// Apply filtering if domain_only is enabled
+	links = s.filterLinksByDomain(task.BaseURL, links)
+
 	preppedLinks := prepareLinks(task, links, visited)
 
 	if (task.Depth == maxDepth) {
 		wg.Add(len(preppedLinks))
 	}
-	// Process the links in the following way. 
-	// If the current depth is less than max depth, create a new task for each link and send it to the tasks channel.
-	// If the current depth is equal to max depth (leaf node, check the status of each link and send it to the results channel.
+	
+	// Process the links
 	for link, text := range preppedLinks {
 		if task.Depth < maxDepth {
-			// TODO: Improve the check for links starting with the base URL
+			// Check if it's an internal URL we should crawl
 			if (isInternalURL(task.BaseURL, link)) {
 				wg.Add(1)
 				tasks <- CrawlTask{BaseURL: task.BaseURL, URL: link, Depth: task.Depth + 1}

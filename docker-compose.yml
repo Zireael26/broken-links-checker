@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  nexusprobe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexusprobe
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./reports:/app/reports
+    environment:
+      - MAX_WORKERS=50
+      - MAX_DEPTH=2
+      - RATE_LIMIT=0
+      - CHROME_PATH=/usr/bin/chromium-browser
+    restart: unless-stopped

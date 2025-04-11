@@ -6,12 +6,14 @@ type LinkResult struct {
     Status string `json:"status"`
     Code   int    `json:"code"`
     Depth  int    `json:"depth,omitempty"`
+    Tier   string `json:"tier,omitempty"`  // static, spoofed, or rendered
 }
 
 type CrawlTask struct {
 	BaseURL string
     URL     string
     Depth   int
+    Type    string
 }
 
 var LinkTypes = map[string]string{
